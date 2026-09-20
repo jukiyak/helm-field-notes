@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>helm — 正典層・ゲート・検証（図解）</title>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: "base",
+    themeVariables: {
+      primaryColor: "#e8f1ff",
+      primaryTextColor: "#122",
+      primaryBorderColor: "#3b6ea5",
+      lineColor: "#445",
+      secondaryColor: "#f4f0e6",
+      tertiaryColor: "#eef6ea",
+      fontFamily: "ui-sans-serif, system-ui, Hiragino Sans, sans-serif"
+    },
+    flowchart: { curve: "basis", padding: 12 }
+  });
+</script>
+<style>
+  :root {
+    --bg: #f7f5f0;
+    --ink: #1a1a1a;
+    --muted: #5a5a5a;
+    --card: #fff;
+    --line: #ddd6c8;
+    --accent: #2f5d8c;
+    --warn: #8b3a2a;
+    --ok: #2d6a4f;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: ui-sans-serif, system-ui, "Hiragino Sans", "Noto Sans JP", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.45;
+  }
+  header {
+    padding: 1.5rem 1.5rem 0.5rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  header h1 { font-size: 1.35rem; margin: 0 0 0.35rem; }
+  header p { margin: 0; color: var(--muted); font-size: 0.95rem; }
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 1rem 1.5rem 3rem;
+    display: grid;
+    gap: 1.25rem;
+  }
+  section.card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 1rem 1.1rem 0.6rem;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.03);
+  }
+  section h2 {
+    font-size: 1.05rem;
+    margin: 0 0 0.35rem;
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+  }
+  section h2 span.num {
+    display: inline-flex;
+    width: 1.5rem; height: 1.5rem;
+    border-radius: 999px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.8rem;
+    align-items: center;
+    justify-content: center;
+  }
+  .lede { color: var(--muted); font-size: 0.9rem; margin: 0 0 0.75rem; }
+  .mermaid { margin: 0.25rem 0 0.75rem; }
+  .key {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.5rem;
+    margin: 0.5rem 0 0.75rem;
+  }
+  .key div {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 0.55rem 0.7rem;
+    font-size: 0.82rem;
+    background: #fafaf7;
+  }
+  .key strong { display: block; font-size: 0.88rem; margin-bottom: 0.15rem; }
+  .tier-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.4rem;
+    margin: 0.5rem 0 0.8rem;
+  }
+  @media (max-width: 800px) {
+    .tier-row { grid-template-columns: 1fr 1fr; }
+  }
+  .tier {
+    border-radius: 10px;
+    padding: 0.55rem 0.6rem;
+    color: #fff;
+    font-size: 0.78rem;
+    min-height: 4.8rem;
+  }
+  .tier b { display: block; font-size: 0.92rem; margin-bottom: 0.2rem; }
+  .t0 { background: #52796f; }
+  .t1 { background: #3d6b8c; }
+  .t2 { background: #b5651d; }
+  .t3 { background: #8b2e2e; }
+  .tx { background: #3a3a3a; }
+  footer {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 1.5rem 2rem;
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+  code { font-size: 0.85em; background: #eee8dc; padding: 0.05em 0.3em; border-radius: 4px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>helm — 正典層・ゲート・検証</h1>
+  <p>2026-09-19 パネル裁定の図解。製品を5つ作れ、ではない。役割と噛み方。</p>
+</header>
+<main>
+
+<section class="card">
+  <h2><span class="num">1</span> 同じ事実の5役割</h2>
+  <p class="lede">保存場所ではなく役割。派生物は正典への参照（版・スコープ）を持たせる。</p>
+  <div class="key">
+    <div><strong>canon</strong>確定事実。版として残す。捨てて再生成しない。</div>
+    <div><strong>ledger</strong>起きたこと＋本体の所在。追記。ポインタは手元に。</div>
+    <div><strong>view</strong>表示・操作面。確定しない。捨てて描き直してよい。</div>
+    <div><strong>index</strong>検索用の写し。事実の根拠にしない。</div>
+    <div><strong>oplog</strong>要求・承認・操作の証拠。未反映意図は捨てない。</div>
+  </div>
+  <pre class="mermaid">
+flowchart TB
+  subgraph authority["確定の権威"]
+    C["canon<br/>正典"]
+  end
+  subgraph pointers["所在と痕跡"]
+    L["ledger<br/>台帳・ポインタ"]
+    O["oplog<br/>操作・承認ログ"]
+  end
+  subgraph derivatives["再生成できる写し"]
+    V["view<br/>画面"]
+    I["index<br/>検索"]
+  end
+  C -->|"本文・版"| L
+  C -->|"canon_ref + rev"| V
+  C -->|"canon_ref + rev"| I
+  V -->|"人の操作 / 承認"| O
+  O -->|"明示の promote だけ"| C
+  L -.->|"例: sent.jsonl → Gmail Sent"| C
+  style C fill:#dbe8f5,stroke:#2f5d8c,stroke-width:2px
+  style L fill:#f3e9d8,stroke:#8a6a3a
+  style O fill:#f3e9d8,stroke:#8a6a3a
+  style V fill:#e6f0e8,stroke:#2d6a4f
+  style I fill:#e6f0e8,stroke:#2d6a4f
+  </pre>
+  <p class="lede">画面を触っただけでは正典は変わらない。戻すなら明示（promote）。型標本: <code>sent.jsonl</code> = ledger / Gmail Sent = canon。</p>
+</section>
+
+<section class="card">
+  <h2><span class="num">2</span> ゲート — 低摩擦だが噛む</h2>
+  <p class="lede">権限UIの別名ではない。作用半径 × 可逆性 × 今回の作業契約。</p>
+  <div class="tier-row">
+    <div class="tier t0"><b>T0 自動</b>読む・描く・下書き・ログ。成功は沈黙。</div>
+    <div class="tier t1"><b>T1 バッチ</b>契約内・可逆の正典更新。差分をまとめて。</div>
+    <div class="tier t2"><b>T2 割込</b>人間宛送信・削除・scope外。一件承認・内容固定。</div>
+    <div class="tier t3"><b>T3 能力なし</b>金銭・権限。agentに実行能力を持たせない。</div>
+    <div class="tier tx"><b>TX 拒否</b>判定不能・迂回。「とりあえず許可」なし。</div>
+  </div>
+  <pre class="mermaid">
+flowchart LR
+  A["agent の提案"] --> G{"ゲート<br/>blast × 可逆 × 作業契約"}
+  G -->|T0/T1| X["実行境界が実行"]
+  G -->|T2| H["人の承認<br/>対象・本文・期限に固定"]
+  H --> X
+  G -->|T3| P["人だけが vendor UI"]
+  G -->|TX| R["拒否<br/>契約を作り直す"]
+  X --> S["成功 / 失敗 / 結果不明"]
+  S -->|"結果不明は照合が先"| L2["ledger に記録"]
+  style G fill:#fff3e0,stroke:#b5651d,stroke-width:2px
+  style R fill:#fde8e8,stroke:#8b2e2e
+  style H fill:#e8f1ff,stroke:#2f5d8c
+  </pre>
+  <p class="lede">不在時: 個人プレーンは止めてよい。ただし待ち行列は見せる（無音停止は不可）。</p>
+</section>
+
+<section class="card">
+  <h2><span class="num">3</span> 検証 — 注意を奪わない</h2>
+  <p class="lede">ボトルネックはログ量ではなく、あなたの注意と context-switch。</p>
+  <pre class="mermaid">
+flowchart TB
+  W["作業中の画面"] --> B["背景で自動検証"]
+  B -->|緑・健全| Q["沈黙<br/>チップだけ"]
+  B -->|判断が必要| R["赤カード<br/>対象・変化・理由・選択肢"]
+  R --> D{"決める"}
+  D -->|承認 / 却下 / 直す| W
+  Dump["Dump / Drop<br/>未整理の行き先"] -.->|"別ジョブのまま"| W
+  Audit["別の検証モード"] -.->|"作らない"| X["×"]
+  style R fill:#fde8e8,stroke:#8b2e2e,stroke-width:2px
+  style Q fill:#e6f0e8,stroke:#2d6a4f
+  style Audit fill:#eee,stroke:#999,stroke-dasharray: 4 3
+  style X fill:#eee,stroke:#999
+  </pre>
+  <p class="lede">受入条件はきれいなダッシュボードではなく、<b>拒否の実証</b>（宛先変更・scope外・古い版・盲目再実行が止まること）。</p>
+</section>
+
+</main>
+<footer>
+  出典: panel <code>helm-canon-gates-2026-09-19/verdict.md</code> → <code>docs/intent.md</code> §3.1.4–3.1.6（未コミット）
+</footer>
+</body>
+</html>

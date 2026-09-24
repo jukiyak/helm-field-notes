@@ -28,3 +28,9 @@ Suggested: `helm.jukiyakinjo.com` → GitHub Pages
 ### Mac mini alternative
 - Serve static dir behind Tailscale Serve / Funnel, or Caddy + cloudflared tunnel
 - Good for private drafts; public field notes better on Pages/CF
+
+## Personal diagrams (2026-09-24)
+
+- Temporary: α/β axes note on this public Pages site (`alpha-beta-axes.html`).
+- Target later: private notes host on `app.jukiyakinjo.com` (name may change; do not hard-depend on `helm.`).
+- Public Pages is a stopgap only — move private diagrams off when app.* exists.
